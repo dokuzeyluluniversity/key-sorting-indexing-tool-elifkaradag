@@ -19,7 +19,6 @@
 void jsonread(FILE *fp)
 {
 	
-   
    // jf= fopen("ptr.json", "r");
 	
 	char buffer[1024];
