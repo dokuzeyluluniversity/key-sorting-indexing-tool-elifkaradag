@@ -6,6 +6,13 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+
+struct _Index {
+	void* key;
+	int RRN; //relative record numbers;	
+};
+typedef struct _Index Index;
+
     void jsonread(FILE *fp);
     struct json_object *parsed_json;
 	struct json_object *FileName;
@@ -18,13 +25,12 @@
 
 void jsonread(FILE *fp)
 {
-	
+   
    // jf= fopen("ptr.json", "r");
 	
 	char buffer[1024];
    
 	size_t i;	
-
 	//fp = fopen(fp,"r");
 	fread(buffer, 1024, 1, fp);
 	fclose(fp);
@@ -40,17 +46,10 @@ void jsonread(FILE *fp)
     json_object_object_get_ex(parsed_json, "keyEnd", &keyEnd);
     json_object_object_get_ex(parsed_json, "order", &order);
 
-	printf("Name: %s\n", json_object_get_string(FileName));
-	printf("Age: %d\n", json_object_get_int(keyStart));
+	//printf("Name: %s\n", json_object_get_string(FileName));
+	//printf("Age: %d\n", json_object_get_int(keyStart));
 
 }
-
-#define REC_SIZE 100
-struct _Index {
-	void* key;
-	int RRN; //relative record numbers;	
-};
-typedef struct _Index Index;
 
 int compareKey(const void* a, const void* b)//ASC with BIN
 {
@@ -81,7 +80,7 @@ int cmp(const void *p, const void *q) {//UTF-CHR DSC SORT
      return -strcmp(*pp, *qq);
 }
 
-void createIndexFileBinary(int startkey,int endkey,int recordLengt,char* keyencoding,char* order)
+void createIndexFileBinary(int startkey,int endkey,int recordLengt,const char* keyencoding,const char* order)
 {
 	FILE* fp;
     FILE* fp1;//index file
@@ -196,12 +195,156 @@ void createIndexFileBinary(int startkey,int endkey,int recordLengt,char* keyenco
     fclose(fp);
 
 }
+int binaryFileSearch(FILE* fp, void* name1, int firstIdx, int lastIdx)
+{
+	printf("\nRunning Binary Search %d %d\n", firstIdx, lastIdx);
+	Index first, last, middle;
+	int returnData;
+	
+	// Calculate the middle Index
+	int middleIdx = (firstIdx+lastIdx)/2;
 
+	// Read first record and return if it is the searched one.
+	fseek(fp, firstIdx*(sizeof(Index)), SEEK_SET);
+	fread(&first, sizeof(Index), 1, fp);
+	//if(strcmp(first.key,name1) == 0)
+    if(first.key==name1)
+	{
+		returnData=first.RRN;
+		return returnData;
+	}
+	// Read last record and return if it is the searched one.
+	fseek(fp, lastIdx*sizeof(Index), SEEK_SET);
+	fread(&last, sizeof(Index), 1, fp);
+	//if(strcmp(last.key,name1) == 0)
+    if(last.key==name1)
+	{
+		returnData=last.RRN;
+		return returnData;
+	}
+	// Recursion exit condition, If middle index is equal to first or last index
+	// required comparisons are already made, so record is not found.
+	// Create and return an empty person.
+	if(middleIdx==firstIdx || middleIdx == lastIdx) {
+		int d=-1;
+		return d;
+	}
 
-void main() {
-	createIndexFileBinary(4,14,64,"CHR","DSC");
-	FILE* fp=fopen("j.json","r");
-	//char *j;
-	jsonread(fp);
-
+	// Read the middle record and return if it is the searched one.
+	fseek(fp, middleIdx*sizeof(Index), SEEK_SET);
+	fread(&middle, sizeof(Index), 1, fp);
+	//if(strcmp(middle.key,name1) == 0)
+    if(middle.key==name1)
+	{
+		returnData=middle.RRN;
+		return returnData;
+	}
+	// Determine the record position and recursively call with appropriate attributes.
+	//if(strcmp(middle.key,name1)>0) {
+    if(middle.key>name1){
+		return binaryFileSearch(fp, name1, firstIdx+1, middleIdx-1);
+	} 
+	else {
+		return binaryFileSearch(fp, name1, middleIdx+1, lastIdx-1);
+	}
 }
+int findRecordByID(void* name1) {
+    // Open the file
+    FILE* inputFile;
+    inputFile = fopen("indexes.ndx", "rb");
+    fseek(inputFile, 0, SEEK_END);
+    int REC_COUNT=(ftell(inputFile))/sizeof(Index);
+    //printf("%d",REC_COUNT);
+
+    // Calculate initial first and last indexes.
+    int firstIdx = 0;
+    fseek(inputFile, REC_COUNT*sizeof(Index), SEEK_SET);
+    int lastIdx = (ftell(inputFile)/sizeof(Index))-1;
+    printf("\n %d",lastIdx);
+
+    // Initiate the search.
+    int result = binaryFileSearch(inputFile, name1, firstIdx, lastIdx);
+    fclose(inputFile);
+    return result;
+}
+
+void printMenu(int* answer){
+
+    //print the user menu
+    printf("You can perform the following tasks: \n");
+    printf("(1) Open \n");
+    printf("(2) Create index \n");
+    printf("(3) Search \n");
+    printf("(4) close \n");
+    printf("-------------------------------------\n");
+    printf("(5) Quit \n");
+    printf("Please Select one... \n");
+    scanf("%d",answer);
+}
+
+void main()
+{
+    //createIndexFileBinary(4,14,64,"CHR","DSC");
+    //findRecordByName(9739436911H);
+
+
+    int answer;
+    int who;
+    char ptr[50];
+    char *word;
+    void * key1;
+    //personNumber = RECORD_COUNT;
+    
+    ab:
+    //print the user menu and read user answer
+    printMenu(&answer);
+
+    while(answer>5 || answer<1)
+    {
+        printf("\nEnter a valid choice by pressing ENTER key again");
+        printMenu(&answer);
+    }
+
+    switch(answer)
+    {
+        case 1: 
+            printf("Enter json file name :");
+            scanf("%s",ptr);
+            strcat(ptr,".json");
+            FILE *
+            jf= fopen(ptr, "r");
+            jsonread(jf);
+            goto ab;
+            break;
+        case 2: 
+            createIndexFileBinary(json_object_get_int(keyStart),json_object_get_int(keyEnd),json_object_get_int(recordLength),json_object_get_string(keyEncoding),json_object_get_string(order));//json dosyasından 
+            goto ab;
+            break;
+           
+        case 3: printf("Enter the data that you want to search:");
+
+            scanf("%s", key1);
+            who = findRecordByID(key1);   
+            printf("Was the index found?");
+            printf(" %d",who);
+			FILE* file1;
+    	    file1 = fopen(json_object_get_string(FileName),"rb");
+            if(who >-1){
+				fseek(file1, who*json_object_get_int(recordLength), SEEK_SET);
+				char data[100];
+				fread(data, json_object_get_int(recordLength), 1,file1);
+                printf("%s",data);
+				
+            } 
+            else 
+				printf("Not found...");        
+            goto ab;
+            break;
+        case 4: printf("closed\n");
+            goto ab;
+            break;    
+        case 5: printf("Program is terminating \n");
+            break;
+    }
+}
+
