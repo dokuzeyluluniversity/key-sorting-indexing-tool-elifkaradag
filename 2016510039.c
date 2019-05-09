@@ -15,11 +15,11 @@ typedef struct _Index Index;
 
     void jsonread(FILE *fp);
     struct json_object *parsed_json;
-	struct json_object *FileName;
-	struct json_object *indexName;
-	struct json_object *recordLength;
-	struct json_object *keyEncoding;
-	struct json_object *keyStart;
+    struct json_object *FileName;
+    struct json_object *indexName;
+    struct json_object *recordLength;
+    struct json_object *keyEncoding;
+    struct json_object *keyStart;
     struct json_object *keyEnd;
     struct json_object *order;
 
@@ -104,7 +104,7 @@ void createIndexFileBinary(int startkey,int endkey,int recordLengt,const char* k
     //fread(&ptr[k], REC_SIZE, 1, fp);
     for(j=0;j<REC_COUNT;j++)
     {
-        fseek(fp, startkey+(recordLengt*j), SEEK_SET);
+        fseek(fp, startkey+(recordLengt*j), SEEK_SET);//her seferinde ilgili satira gider
         int number=(endkey-startkey)+1;
        // fread(&data,number, 1, fp);
        // printf("%d \ndata:",data);
