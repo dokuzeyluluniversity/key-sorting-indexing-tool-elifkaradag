@@ -310,7 +310,7 @@ void main()
         case 1: 
             printf("Enter json file name :");
             scanf("%s",ptr);
-            strcat(ptr,".json");
+            strcat(ptr,".json");//.json ekler
             FILE *
             jf= fopen(ptr, "r");
             jsonread(jf);
