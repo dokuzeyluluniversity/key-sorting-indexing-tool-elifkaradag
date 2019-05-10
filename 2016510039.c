@@ -15,11 +15,11 @@ typedef struct _Index Index;
 
     void jsonread(FILE *fp);
     struct json_object *parsed_json;
-    struct json_object *FileName;
-    struct json_object *indexName;
-    struct json_object *recordLength;
-    struct json_object *keyEncoding;
-    struct json_object *keyStart;
+	struct json_object *FileName;
+	struct json_object *indexName;
+	struct json_object *recordLength;
+	struct json_object *keyEncoding;
+	struct json_object *keyStart;
     struct json_object *keyEnd;
     struct json_object *order;
 
@@ -48,9 +48,9 @@ void jsonread(FILE *fp)
 
 	//printf("Name: %s\n", json_object_get_string(FileName));
 	//printf("Age: %d\n", json_object_get_int(keyStart));
+    printf("\njsonfile is read!!!!\n");
 
 }
-
 int compareKey(const void* a, const void* b)//ASC with BIN
 {
     const int *ia = (const int *)a; // casting pointer types 
@@ -80,12 +80,12 @@ int cmp(const void *p, const void *q) {//UTF-CHR DSC SORT
      return -strcmp(*pp, *qq);
 }
 
-void createIndexFileBinary(int startkey,int endkey,int recordLengt,const char* keyencoding,const char* order)
+void createIndexFileBinary(const char* FileName,const char* indexFileName ,int startkey,int endkey,int recordLengt,const char* keyencoding,const char* order)
 {
 	FILE* fp;
     FILE* fp1;//index file
 
-	fp = fopen("sample (1).dat", "rb");
+	fp = fopen(FileName, "rb");
 	if(!fp)
 		return;
 	int i=0;
@@ -104,7 +104,7 @@ void createIndexFileBinary(int startkey,int endkey,int recordLengt,const char* k
     //fread(&ptr[k], REC_SIZE, 1, fp);
     for(j=0;j<REC_COUNT;j++)
     {
-        fseek(fp, startkey+(recordLengt*j), SEEK_SET);//her seferinde ilgili satira gider
+        fseek(fp, startkey+(recordLengt*j), SEEK_SET);
         int number=(endkey-startkey)+1;
        // fread(&data,number, 1, fp);
        // printf("%d \ndata:",data);
@@ -154,6 +154,8 @@ void createIndexFileBinary(int startkey,int endkey,int recordLengt,const char* k
                 printf("%d-%d\n",*(int *)indexes[k].key,indexes[k].RRN);
                 
             }*/
+            //printf("%d-%d\n",*(int *)indexes[1].key,indexes[1].RRN);
+       // printf("**************");
         }
     }
     else if(strcmp(keyencoding,"CHR")==0)//CHR ise ona göre sırala
@@ -185,8 +187,7 @@ void createIndexFileBinary(int startkey,int endkey,int recordLengt,const char* k
         }
 
     }
-
-	fp1 = fopen("indexes.ndx", "wb");
+	fp1 = fopen(indexFileName, "wb");
 	if(!fp1)
 		 return;
 	fseek(fp1, 0, SEEK_SET);
@@ -198,6 +199,7 @@ void createIndexFileBinary(int startkey,int endkey,int recordLengt,const char* k
 int binaryFileSearch(FILE* fp, void* name1, int firstIdx, int lastIdx)
 {
 	printf("\nRunning Binary Search %d %d\n", firstIdx, lastIdx);
+
 	Index first, last, middle;
 	int returnData;
 	
@@ -229,7 +231,6 @@ int binaryFileSearch(FILE* fp, void* name1, int firstIdx, int lastIdx)
 		int d=-1;
 		return d;
 	}
-
 	// Read the middle record and return if it is the searched one.
 	fseek(fp, middleIdx*sizeof(Index), SEEK_SET);
 	fread(&middle, sizeof(Index), 1, fp);
@@ -248,10 +249,10 @@ int binaryFileSearch(FILE* fp, void* name1, int firstIdx, int lastIdx)
 		return binaryFileSearch(fp, name1, middleIdx+1, lastIdx-1);
 	}
 }
-int findRecordByID(void* name1) {
+int findRecordByID(void* name1,const char* indexFileName ) {
     // Open the file
     FILE* inputFile;
-    inputFile = fopen("indexes.ndx", "rb");
+    inputFile = fopen(indexFileName , "rb");
     fseek(inputFile, 0, SEEK_END);
     int REC_COUNT=(ftell(inputFile))/sizeof(Index);
     //printf("%d",REC_COUNT);
@@ -292,7 +293,7 @@ void main()
     int who;
     char ptr[50];
     char *word;
-    void * key1;
+    void* key1;
     //personNumber = RECORD_COUNT;
     
     ab:
@@ -310,37 +311,44 @@ void main()
         case 1: 
             printf("Enter json file name :");
             scanf("%s",ptr);
-            strcat(ptr,".json");//.json ekler
+            printf("%s",ptr);
+            strcat(ptr,".json");
             FILE *
             jf= fopen(ptr, "r");
             jsonread(jf);
             goto ab;
             break;
         case 2: 
-            createIndexFileBinary(json_object_get_int(keyStart),json_object_get_int(keyEnd),json_object_get_int(recordLength),json_object_get_string(keyEncoding),json_object_get_string(order));//json dosyasından 
+            createIndexFileBinary(json_object_get_string(FileName),json_object_get_string(indexName),json_object_get_int(keyStart),json_object_get_int(keyEnd),json_object_get_int(recordLength),json_object_get_string(keyEncoding),json_object_get_string(order));//json dosyasından 
             goto ab;
             break;
            
-        case 3: printf("Enter the data that you want to search:");
+        case 3: printf("Enter the data that you want to search: ");
+            if(strcmp(json_object_get_string(keyEncoding),"BIN")==0){
+                scanf("%d", key1);
+            }
+            else{
+                scanf("%s", key1);
 
-            scanf("%s", key1);
-            who = findRecordByID(key1);   
-            printf("Was the index found?");
+            }
+            
+            who = findRecordByID(key1,json_object_get_string(indexName));   
+            printf("Was the index found? ");
             printf(" %d",who);
 			FILE* file1;
     	    file1 = fopen(json_object_get_string(FileName),"rb");
             if(who >-1){
-				fseek(file1, who*json_object_get_int(recordLength), SEEK_SET);
+				fseek(file1, who, SEEK_SET);
 				char data[100];
 				fread(data, json_object_get_int(recordLength), 1,file1);
-                printf("%s",data);
-				
+                printf("\n%s",data);
             } 
             else 
 				printf("Not found...");        
             goto ab;
             break;
-        case 4: printf("closed\n");
+        case 4: printf("Files were closed\n");
+        fclose(jf);
             goto ab;
             break;    
         case 5: printf("Program is terminating \n");
